@@ -1,6 +1,9 @@
 # simple_data_read_function
 final project for Harvard EDX CS50 Python
 
+Video: [youtube.com/watch?v=0aRj9Cpn-HY&feature=youtu.be]
+Github: [https://github.com/ua-chjb/simple_data_read_function/tree/main]
+
 This program reads in a csv and passes it through a class to summarize the dataframe. The class Summary has methods `small_summary()` and `large_summary()`, which can be called as reference points at any time during EDA.
 
 The method `small_summary()` is similar to `df.dypes()`, but with the following improvements:
@@ -29,4 +32,4 @@ Sample data:
 - the program does not use the `open` method, as this only works with local data.
 - to avoid unnecessary cost and portability, the testing data files are hosted open-source in this repository.
 - data files' lengths are between 700 and 285 000.
-- to avoid large compute time, the large csv has been commented out in unit testing. 
+- to avoid large compute time, the large csv has been commented out in unit testing.

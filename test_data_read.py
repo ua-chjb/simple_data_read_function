@@ -1,4 +1,4 @@
-from data_read import read_in_csv, quick_peek
+from data_read import read_in_csv
 import pandas as pd
 import pytest
 

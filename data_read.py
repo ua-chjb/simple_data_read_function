@@ -7,25 +7,13 @@ pd.set_option("display.max_rows", 10)
 
 class Summary:
 
-  def __init__(self, df, Y_colstr):
+  def __init__(self, df: pd.DataFrame, Y_colstr: str):
     self.df = df
     self.Y_colstr = Y_colstr
-
-  def small_summary(self):
-    return pd.DataFrame({
-      "feature": self.df.columns,
-      "dtype": self.df.dtypes.values,
-      "nulls": self.df.isnull().sum().values,
-      "nonnuls %": [
-        f"{round((self.df[c].isnull().sum() / self.df.shape[0]) * 100, 2)}%"
-        for c in self.df.columns
-      ],
-      "uniques": self.df.nunique().values,
-      "uniques %": [
-        f"{round((self.df[c].nunique() / len(self.df)) * 100, 2)}%"
-        for c in self.df.columns
-      ]
-    })
+    self.collst = df.columns
+    self.numeric_collst = self.df.select_dtypes(include=[np.number]).columns
+    self.null_counts = df.isnull().sum()
+    self.unique_counts = df.nunique()
 
   def _get_outliers_iqr(self, c):
     if not pd.api.types.is_numeric_dtype(c):
@@ -41,89 +29,103 @@ class Summary:
     return len(outliers)
 
 
+  def small_summary(self):
+    return pd.DataFrame({
+      "feature": self.collst,
+      "dtype": self.df.dtypes.values,
+      "nulls": self.null_counts,
+      "nonnuls %": [
+        f"{round((self.null_counts[c] / self.df.shape[0]) * 100, 2)}%"
+        for c in self.collst
+      ],
+      "uniques": self.df.nunique().values,
+      "uniques %": [
+        f"{round((self.unique_counts[c] / len(self.df)) * 100, 2)}%"
+        for c in self.collst
+      ]
+    })
+
   def large_summary(self):
 
-    cols = self.df.columns
-    numeric_collst = self.df.select_dtypes(include=[np.number]).columns
-    corr_df = self.df[numeric_collst].corr() if self.Y_colstr in numeric_collst else None
+    corr_df = self.df[self.numeric_collst].corr() if self.Y_colstr in self.numeric_collst else None
 
     summary = pd.DataFrame({
-      "BASE": ["|" for _ in cols],
-      "feature": cols,
+      "BASE": ["|" for _ in self.collst],
+      "feature": self.collst,
       "dtype": self.df.dtypes.values,
-      "DESC. STATS": ["|" for _ in cols],
+      "DESC. STATS": ["|" for _ in self.collst],
       "mean": [
         round(self.df[c].mean(), 2) 
-        if c in numeric_collst
-        else "" for c in cols
+        if c in self.numeric_collst
+        else "" for c in self.collst
       ],
       "median": [
         round(self.df[c].median(), 2) 
-        if c in numeric_collst
-        else "" for c in cols
+        if c in self.numeric_collst
+        else "" for c in self.collst
       ],
-      "mode": [self.df[c].mode()[0] for c in cols],
+      "mode": [self.df[c].mode()[0] for c in self.collst],
       "min": [
         round(self.df[c].min(), 2)
-        if c in numeric_collst 
-        else "" for c in cols
+        if c in self.numeric_collst 
+        else "" for c in self.collst
       ],
       
       "25%": [
         round(self.df[c].quantile(0.25), 2)
-        if c in numeric_collst 
-        else "" for c in cols
+        if c in self.numeric_collst 
+        else "" for c in self.collst
       ],
       
       "50%": [
         round(self.df[c].quantile(0.5), 2)
-        if c in numeric_collst 
-        else "" for c in cols
+        if c in self.numeric_collst 
+        else "" for c in self.collst
       ],
       
       "75%": [
         round(self.df[c].quantile(0.75), 2) if
-        c in numeric_collst
-        else "" for c in cols
+        c in self.numeric_collst
+        else "" for c in self.collst
       ],
       
       "max": [
         round(self.df[c].max(), 2) if
-        c in numeric_collst
-        else "" for c in cols
+        c in self.numeric_collst
+        else "" for c in self.collst
       ],
       
       "skew": [
         "" if not pd.api.types.is_numeric_dtype(self.df[c])
         else "left" if (self.df[c].median() > self.df[c].mean()) 
         else "right" if (self.df[c].median() < self.df[c].mean())
-        else "center" for c in cols
+        else "center" for c in self.collst
       ],
 
       "corr": [
         round(corr_df[self.Y_colstr].loc[c], 2) 
         if corr_df is not None and c in corr_df.index
         else ""
-        for c in cols
+        for c in self.collst
       ],
 
-      "COUNTS": ["|" for _ in cols],
-      "outliers": [self._get_outliers_iqr(self.df[c]) for c in cols],
+      "COUNTS": ["|" for _ in self.collst],
+      "outliers": [self._get_outliers_iqr(self.df[c]) for c in self.collst],
       "outliers %": [
         f"{round((self._get_outliers_iqr(self.df[c])/ self.df.shape[0]) * 100, 2)}%"
         if pd.api.types.is_numeric_dtype(self.df[c]) else ""
-        for c in cols
+        for c in self.collst
       ],
-      "uniques": self.df.nunique().values,
+      "uniques": self.unique_counts,
       "uniques %": [
-        f"{round((self.df[c].nunique() / len(self.df)) * 100, 2)}%"
+        f"{round((self.unique_counts[c] / len(self.df)) * 100, 2)}%"
         if pd.api.types.is_numeric_dtype(self.df[c]) else ""
-        for c in cols
+        for c in self.collst
       ],
-      "nulls": self.df.isnull().sum().values,
+      "nulls": self.null_counts,
       "nonnuls %": [
-        f"{round((self.df[c].isnull().sum() / self.df.shape[0]) * 100, 2)}%"
-        for c in cols
+        f"{round((self.null_counts[c] / self.df.shape[0]) * 100, 2)}%"
+        for c in self.collst
       ],
     })
 
